@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xavier Cycle Calendar & Section Tracker</title>
+
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #64748b;
+      --border: #d7dee8;
+      --primary: #0f766e;
+      --accent: #14b8a6;
+      --blue: #2563eb;
+      --yellow: #facc15;
+      --red: #ef4444;
+      --black: #111827;
+      --purple: #8b5cf6;
+      --green: #16a34a;
+      --orange: #f97316;
+      --pink: #ec4899;
+      --shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      margin-bottom: 0.35rem;
+    }
+
+    main {
+      width: min(96%, 1600px);
+      margin: 1.5rem auto 4rem;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.8rem;
+      align-items: end;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    input, select, textarea, button {
+      font: inherit;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: white;
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    button {
+      border: none;
+      border-radius: 11px;
+      padding: 0.7rem 0.95rem;
+      font-weight: 850;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: var(--text);
+    }
+
+    .btn-dark {
+      background: var(--black);
+      color: white;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+
+    .btn-small {
+      padding: 0.45rem 0.65rem;
+      font-size: 0.8rem;
+      border-radius: 8px;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1rem;
+      align-items: center;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.45rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      background: #ecfeff;
+      color: #155e75;
+      border: 1px solid #a5f3fc;
+    }
+
+    .status-pill.offline {
+      background: #fef2f2;
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .calendar-header h2 {
+      font-size: clamp(1.4rem, 3vw, 2.3rem);
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      border: 1px solid var(--border);
+      background: var(--border);
+      gap: 1px;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .weekday {
+      background: #e5e7eb;
+      padding: 0.65rem;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 950;
+    }
+
+    .day-cell {
+      background: white;
+      min-height: 190px;
+      padding: 0.55rem;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .day-cell:hover {
+      background: #f8fafc;
+    }
+
+    .day-cell.empty {
+      background: #f1f5f9;
+      cursor: default;
+    }
+
+    .date-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .date-number {
+      font-weight: 950;
+    }
+
+    .cycle-badge {
+      font-size: 0.7rem;
+      font-weight: 950;
+      padding: 0.2rem 0.45rem;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1e40af;
+      white-space: nowrap;
+    }
+
+    .badge-day0 { background: var(--yellow); color: #422006; }
+    .badge-holiday { background: var(--red); color: white; }
+    .badge-noclass { background: var(--black); color: white; }
+    .badge-activity { background: var(--purple); color: white; }
+
+    .event-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.72rem;
+    }
+
+    .event {
+      padding: 0.3rem 0.38rem;
+      border-radius: 8px;
+      font-weight: 750;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #eff6ff;
+      color: #1e3a8a;
+      border-left: 4px solid var(--blue);
+    }
+
+    .event small {
+      display: block;
+      font-weight: 900;
+      opacity: 0.8;
+      margin-bottom: 0.12rem;
+    }
+
+    .event.holiday { background: #fee2e2; color: #991b1b; border-color: var(--red); }
+    .event.day0 { background: #fef3c7; color: #92400e; border-color: var(--yellow); }
+    .event.noclass { background: #111827; color: white; border-color: #000; }
+    .event.activity { background: #ede9fe; color: #5b21b6; border-color: var(--purple); }
+    .event.assessment { background: #dcfce7; color: #166534; border-color: var(--green); }
+    .event.teacher { background: #ffedd5; color: #9a3412; border-color: var(--orange); }
+    .event.personal { background: #fce7f3; color: #9d174d; border-color: var(--pink); }
+
+    .remarks {
+      margin-top: auto;
+      border-top: 1px dashed var(--border);
+      padding-top: 0.35rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1200px;
+      border-collapse: collapse;
+      background: white;
+      font-size: 0.84rem;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.55rem;
+      vertical-align: top;
+    }
+
+    th {
+      background: #111827;
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    th.section-th {
+      min-width: 160px;
+    }
+
+    .section-name-input {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      font-weight: 900;
+      text-align: center;
+      padding: 0.4rem;
+      border-radius: 8px;
+    }
+
+    td.editable-cell {
+      background: #fff;
+      cursor: text;
+      min-width: 160px;
+    }
+
+    td.editable-cell:focus {
+      outline: 3px solid rgba(20, 184, 166, 0.25);
+      background: #f0fdfa;
+    }
+
+    .meeting-cell {
+      background: #f8fafc;
+    }
+
+    .no-meeting {
+      background: #f1f5f9;
+      color: #94a3b8;
+      text-align: center;
+      font-style: italic;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 0.8rem;
+    }
+
+    .stat-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0.9rem;
+    }
+
+    .stat-card strong {
+      display: block;
+      font-size: 1.3rem;
+      color: var(--primary);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.68);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+      z-index: 1000;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      width: min(96vw, 880px);
+      background: white;
+      border-radius: var(--radius);
+      padding: 1rem;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow);
+    }
+
+    .modal h3 {
+      margin-bottom: 1rem;
+    }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    .events-editor {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 0.6rem;
+    }
+
+    .event-editor-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0.8rem;
+      background: #f8fafc;
+    }
+
+    .event-editor-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+    }
+
+    .toast {
+      position: fixed;
+      right: 1rem;
+      bottom: 1rem;
+      background: #111827;
+      color: white;
+      padding: 0.8rem 1rem;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(16px);
+      transition: 0.25s ease;
+      z-index: 1100;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem 1rem;
+    }
+
+    @media (max-width: 1100px) {
+      .controls {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 720px) {
+      .controls,
+      .modal-grid,
+      .event-editor-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .calendar-grid {
+        display: block;
+        background: transparent;
+        border: none;
+      }
+
+      .weekday {
+        display: none;
+      }
+
+      .day-cell {
+        margin-bottom: 0.65rem;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        min-height: auto;
+      }
+
+      .day-cell.empty {
+        display: none;
+      }
+    }
+
+    @media print {
+      header,
+      .controls-panel,
+      .button-row,
+      footer,
+      .modal-backdrop,
+      .toast {
+        display: none !important;
+      }
+
+      main {
+        width: 100%;
+        margin: 0;
+      }
+
+      .panel {
+        box-shadow: none;
+        border: none;
+      }
+
+      body {
+        background: white;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Xavier Cycle Calendar & G11 FLIT Tracker</h1>
+    <p>Shared calendar with Day 0–7 tracking, subject-specific events, and G11 FLIT section progress.</p>
+  </header>
+
+  <main>
+    <section class="panel controls-panel">
+      <div class="controls">
+        <div>
+          <label for="startDate">First Cycle Date</label>
+          <input type="date" id="startDate" value="2026-06-25" />
+        </div>
+
+        <div>
+          <label for="startDay">First Cycle Day</label>
+          <select id="startDay">
+            <option value="1" selected>Day 1</option>
+            <option value="2">Day 2</option>
+            <option value="3">Day 3</option>
+            <option value="4">Day 4</option>
+            <option value="5">Day 5</option>
+            <option value="6">Day 6</option>
+            <option value="7">Day 7</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="monthSelect">Month</label>
+          <input type="month" id="monthSelect" value="2026-06" />
+        </div>
+
+        <div>
+          <label for="weekends">Weekends</label>
+          <select id="weekends">
+            <option value="skip" selected>Do not count</option>
+            <option value="count">Count as cycle days</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="viewMode">View</label>
+          <select id="viewMode">
+            <option value="calendar" selected>Monthly Calendar</option>
+            <option value="table">G11 FLIT Tracker</option>
+          </select>
+        </div>
+
+        <div>
+          <button class="btn-primary" id="applySettingsBtn">Apply</button>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button class="btn-secondary" id="prevMonth">← Previous</button>
+        <button class="btn-secondary" id="nextMonth">Next →</button>
+        <button class="btn-secondary" id="todayBtn">Today</button>
+        <button class="btn-primary" id="manageSectionsBtn">Manage Sections</button>
+        <button class="btn-dark" id="exportBtn">Export JSON</button>
+        <button class="btn-dark" id="importBtn">Import JSON</button>
+        <button class="btn-secondary" id="printBtn">Print</button>
+        <button class="btn-danger" id="resetBtn">Reset</button>
+        <span id="syncStatus" class="status-pill offline">Local Mode</span>
+        <input type="file" id="importFile" accept="application/json" hidden />
+      </div>
+
+      <div class="legend">
+        <span><i class="dot" style="background:#dbeafe"></i> Day 1–7</span>
+        <span><i class="dot" style="background:#facc15"></i> Day 0</span>
+        <span><i class="dot" style="background:#ef4444"></i> Holiday</span>
+        <span><i class="dot" style="background:#111827"></i> No Classes</span>
+        <span><i class="dot" style="background:#8b5cf6"></i> Activity</span>
+        <span><i class="dot" style="background:#16a34a"></i> Assessment</span>
+        <span><i class="dot" style="background:#f97316"></i> Teacher Note</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="calendar-header">
+        <div>
+          <h2 id="calendarTitle">June 2026</h2>
+          <p id="calendarSummary">Click any date to edit and add multiple events.</p>
+        </div>
+      </div>
+
+      <div id="calendarView" class="calendar-grid"></div>
+
+      <div id="tableView" hidden>
+        <div class="table-wrap">
+          <table>
+            <thead id="trackerHead"></thead>
+            <tbody id="trackerBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="calendar-header">
+        <h2>G11 FLIT Summary</h2>
+        <p>Counts scheduled class meetings for the visible month.</p>
+      </div>
+      <div class="stats" id="statsPanel"></div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="dateModal">
+    <div class="modal">
+      <h3 id="dateModalTitle">Edit Date</h3>
+
+      <div class="modal-grid">
+        <div>
+          <label for="editDate">Date</label>
+          <input type="date" id="editDate" disabled />
+        </div>
+
+        <div>
+          <label for="editType">Date Type</label>
+          <select id="editType">
+            <option value="auto">Auto Cycle Day</option>
+            <option value="day0">Day 0</option>
+            <option value="holiday">Holiday</option>
+            <option value="noclass">Suspension / No Classes</option>
+            <option value="activity">Activity Day</option>
+            <option value="manual">Manual Cycle Day</option>
+          </select>
+        </div>
+
+        <div id="manualDayWrap" hidden>
+          <label for="manualDay">Manual Day</label>
+          <select id="manualDay">
+            <option value="1">Day 1</option>
+            <option value="2">Day 2</option>
+            <option value="3">Day 3</option>
+            <option value="4">Day 4</option>
+            <option value="5">Day 5</option>
+            <option value="6">Day 6</option>
+            <option value="7">Day 7</option>
+          </select>
+        </div>
+
+        <div class="full">
+          <label for="editRemarks">Date Remarks</label>
+          <textarea id="editRemarks" placeholder="General remarks for this date"></textarea>
+        </div>
+
+        <div class="full">
+          <label>Events for this Date</label>
+          <div class="button-row" style="margin-top:0;">
+            <button class="btn-primary btn-small" id="addEventBtn">+ Add Event</button>
+          </div>
+          <div class="events-editor" id="eventsEditor"></div>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button class="btn-primary" id="saveDateBtn">Save Date</button>
+        <button class="btn-secondary" id="clearDateBtn">Clear Date</button>
+        <button class="btn-secondary" id="closeDateBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="sectionsModal">
+    <div class="modal">
+      <h3>Manage Sections / Classes</h3>
+      <p style="color:var(--muted); margin-bottom:1rem;">
+        Default schedule: A = Days 1,5,6,7; B = Days 1,2,4,6; C = Days 2,4,6,7.
+      </p>
+
+      <div id="sectionsEditor" class="events-editor"></div>
+
+      <div class="button-row">
+        <button class="btn-primary" id="addSectionBtn">+ Add Section</button>
+        <button class="btn-primary" id="saveSectionsBtn">Save Sections</button>
+        <button class="btn-secondary" id="closeSectionsBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Saved.</div>
+
+  <footer>
+    <p>Live sync is powered by Firebase Firestore. If Firebase fails, the app keeps a local browser copy.</p>
+  </footer>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      onSnapshot,
+      setDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBKZyGNn_iPk9Mte-1edCwsvCxrtpllEgo",
+      authDomain: "xavier-calendar-tracker.firebaseapp.com",
+      projectId: "xavier-calendar-tracker",
+      storageBucket: "xavier-calendar-tracker.firebasestorage.app",
+      messagingSenderId: "651431306609",
+      appId: "1:651431306609:web:77a8a298f61de5b4e042d0",
+      measurementId: "G-QHHMCTX3N3"
+    };
+
+    const FIRESTORE_COLLECTION = "xavierCalendars";
+    const FIRESTORE_DOCUMENT = "sy-2026-2027-main";
+    const STORAGE_KEY = "xavier-cycle-calendar-g11-flit-v3";
+
+    const defaultState = {
+      startDate: "2026-06-25",
+      startDay: 1,
+      currentMonth: "2026-06",
+      weekends: "skip",
+      viewMode: "calendar",
+      sections: [
+        { id: "g11-flit-a", name: "G11 FLIT A", meetingDays: [1, 5, 6, 7] },
+        { id: "g11-flit-b", name: "G11 FLIT B", meetingDays: [1, 2, 4, 6] },
+        { id: "g11-flit-c", name: "G11 FLIT C", meetingDays: [2, 4, 6, 7] }
+      ],
+      dates: {
+        "2026-06-12": {
+          type: "holiday",
+          remarks: "",
+          events: [
+            { id: "e-2026-06-12-1", category: "holiday", subject: "School", title: "Independence Day", details: "Regular Holiday" }
+          ]
+        },
+        "2026-06-15": {
+          type: "activity",
+          remarks: "",
+          events: [
+            { id: "e-2026-06-15-1", category: "activity", subject: "HS", title: "Opening of Classes", details: "KIXSTART\nStudents' Orientation Day" }
+          ]
+        },
+        "2026-06-24": {
+          type: "holiday",
+          remarks: "",
+          events: [
+            { id: "e-2026-06-24-1", category: "holiday", subject: "School", title: "Feast of St. John the Baptist", details: "Holiday" }
+          ]
+        },
+        "2026-06-25": {
+          type: "auto",
+          remarks: "",
+          events: [
+            { id: "e-2026-06-25-1", category: "activity", subject: "HS", title: "Subject Orientation", details: "Individual Colloquium\nG7-G12 GROW" }
+          ]
+        },
+        "2026-06-26": {
+          type: "auto",
+          remarks: "",
+          events: [
+            { id: "e-2026-06-26-1", category: "activity", subject: "G11", title: "DWTL #1", details: "G11A/G11B\nIndividual Colloquium" }
+          ]
+        },
+        "2026-08-07": {
+          type: "day0",
+          remarks: "",
+          events: [
+            { id: "e-2026-08-07-1", category: "day0", subject: "Filipino", title: "Buwan ng Wika Institutional Paglulunsad", details: "FDA 3:00–4:00" }
+          ]
+        },
+        "2026-08-21": {
+          type: "holiday",
+          remarks: "",
+          events: [
+            { id: "e-2026-08-21-1", category: "holiday", subject: "School", title: "Ninoy Aquino Day", details: "" }
+          ]
+        },
+        "2026-08-31": {
+          type: "holiday",
+          remarks: "",
+          events: [
+            { id: "e-2026-08-31-1", category: "holiday", subject: "School", title: "National Heroes' Day", details: "Regular National Holiday" }
+          ]
+        },
+        "2026-11-30": {
+          type: "holiday",
+          remarks: "",
+          events: [
+            { id: "e-2026-11-30-1", category: "holiday", subject: "School", title: "Bonifacio Day", details: "Holiday" }
+          ]
+        },
+        "2026-12-25": {
+          type: "holiday",
+          remarks: "",
+          events: [
+            { id: "e-2026-12-25-1", category: "holiday", subject: "School", title: "Christmas Day", details: "Regular Holiday" }
+          ]
+        },
+        "2027-01-01": {
+          type: "holiday",
+          remarks: "",
+          events: [
+            { id: "e-2027-01-01-1", category: "holiday", subject: "School", title: "New Year's Day", details: "Regular Holiday" }
+          ]
+        },
+        "2027-02-05": {
+          type: "day0",
+          remarks: "",
+          events: [
+            { id: "e-2027-02-05-1", category: "day0", subject: "School", title: "Spring Festival Mass", details: "Chinese Week" }
+          ]
+        },
+        "2027-02-15": {
+          type: "day0",
+          remarks: "",
+          events: [
+            { id: "e-2027-02-15-1", category: "noclass", subject: "School", title: "School Fair Holiday", details: "No Classes" }
+          ]
+        },
+        "2027-02-25": {
+          type: "day0",
+          remarks: "",
+          events: [
+            { id: "e-2027-02-25-1", category: "day0", subject: "School", title: "Anniversary of EDSA People Power", details: "" }
+          ]
+        }
+      },
+      tracker: {}
+    };
+
+    let state = loadLocalState();
+    let db = null;
+    let cloudReady = false;
+    let suppressCloudWrite = false;
+
+    const els = {
+      startDate: document.getElementById("startDate"),
+      startDay: document.getElementById("startDay"),
+      monthSelect: document.getElementById("monthSelect"),
+      weekends: document.getElementById("weekends"),
+      viewMode: document.getElementById("viewMode"),
+      calendarTitle: document.getElementById("calendarTitle"),
+      calendarView: document.getElementById("calendarView"),
+      tableView: document.getElementById("tableView"),
+      trackerHead: document.getElementById("trackerHead"),
+      trackerBody: document.getElementById("trackerBody"),
+      statsPanel: document.getElementById("statsPanel"),
+      syncStatus: document.getElementById("syncStatus"),
+      toast: document.getElementById("toast"),
+      dateModal: document.getElementById("dateModal"),
+      dateModalTitle: document.getElementById("dateModalTitle"),
+      editDate: document.getElementById("editDate"),
+      editType: document.getElementById("editType"),
+      manualDayWrap: document.getElementById("manualDayWrap"),
+      manualDay: document.getElementById("manualDay"),
+      editRemarks: document.getElementById("editRemarks"),
+      eventsEditor: document.getElementById("eventsEditor"),
+      sectionsModal: document.getElementById("sectionsModal"),
+      sectionsEditor: document.getElementById("sectionsEditor")
+    };
+
+    init();
+
+    function init() {
+      syncInputs();
+      render();
+      bindEvents();
+      initFirebase();
+    }
+
+    function initFirebase() {
+      try {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        cloudReady = true;
+        setSyncStatus(true, "Live Sync On");
+
+        const ref = doc(db, FIRESTORE_COLLECTION, FIRESTORE_DOCUMENT);
+
+        onSnapshot(ref, async snapshot => {
+          if (snapshot.exists()) {
+            suppressCloudWrite = true;
+            const cloudData = snapshot.data().state;
+            if (cloudData) {
+              state = normalizeState(cloudData);
+              saveLocalState(false);
+              syncInputs();
+              render();
+            }
+            suppressCloudWrite = false;
+          } else {
+            await saveCloudState();
+          }
+        }, error => {
+          console.error(error);
+          setSyncStatus(false, "Firebase Permission Error");
+        });
+      } catch (error) {
+        console.error(error);
+        setSyncStatus(false, "Local Mode");
+      }
+    }
+
+    function setSyncStatus(isOnline, text) {
+      els.syncStatus.textContent = isOnline ? "● " + text : text;
+      els.syncStatus.classList.toggle("offline", !isOnline);
+    }
+
+    function loadLocalState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return structuredClone(defaultState);
+
+      try {
+        return normalizeState(JSON.parse(saved));
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+        return structuredClone(defaultState);
+      }
+    }
+
+    function normalizeState(data) {
+      const merged = {
+        ...structuredClone(defaultState),
+        ...data,
+        dates: data.dates || {},
+        sections: data.sections?.length ? data.sections : structuredClone(defaultState.sections),
+        tracker: data.tracker || {}
+      };
+
+      merged.sections = merged.sections.map(section => ({
+        id: section.id || makeId(section.name || "section"),
+        name: section.name || "Untitled",
+        meetingDays: Array.isArray(section.meetingDays) ? section.meetingDays.map(Number) : []
+      }));
+
+      Object.keys(merged.dates).forEach(key => {
+        merged.dates[key].events = (merged.dates[key].events || []).map(event => ({
+          id: event.id || makeId("event"),
+          category: event.category || "activity",
+          subject: event.subject || "",
+          title: event.title || "",
+          details: event.details || ""
+        }));
+      });
+
+      return merged;
+    }
+
+    function saveLocalState(shouldSync = true) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (shouldSync && cloudReady && !suppressCloudWrite) saveCloudState();
+    }
+
+    async function saveCloudState() {
+      if (!cloudReady || !db) return;
+      const ref = doc(db, FIRESTORE_COLLECTION, FIRESTORE_DOCUMENT);
+      await setDoc(ref, { state, updatedAt: serverTimestamp() });
+    }
+
+    function syncInputs() {
+      els.startDate.value = state.startDate;
+      els.startDay.value = String(state.startDay);
+      els.monthSelect.value = state.currentMonth;
+      els.weekends.value = state.weekends;
+      els.viewMode.value = state.viewMode;
+    }
+
+    function bindEvents() {
+      document.getElementById("applySettingsBtn").addEventListener("click", () => {
+        state.startDate = els.startDate.value;
+        state.startDay = Number(els.startDay.value);
+        state.currentMonth = els.monthSelect.value;
+        state.weekends = els.weekends.value;
+        state.viewMode = els.viewMode.value;
+        saveLocalState();
+        render();
+        showToast("Settings applied.");
+      });
+
+      document.getElementById("prevMonth").addEventListener("click", () => changeMonth(-1));
+      document.getElementById("nextMonth").addEventListener("click", () => changeMonth(1));
+
+      document.getElementById("todayBtn").addEventListener("click", () => {
+        const now = new Date();
+        state.currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        saveLocalState();
+        render();
+      });
+
+      document.getElementById("printBtn").addEventListener("click", () => window.print());
+      document.getElementById("exportBtn").addEventListener("click", exportJSON);
+      document.getElementById("importBtn").addEventListener("click", () => document.getElementById("importFile").click());
+      document.getElementById("importFile").addEventListener("change", importJSON);
+      document.getElementById("resetBtn").addEventListener("click", resetApp);
+
+      document.getElementById("manageSectionsBtn").addEventListener("click", openSectionsModal);
+      document.getElementById("addSectionBtn").addEventListener("click", addSectionEditorRow);
+      document.getElementById("saveSectionsBtn").addEventListener("click", saveSections);
+      document.getElementById("closeSectionsBtn").addEventListener("click", closeSectionsModal);
+
+      document.getElementById("addEventBtn").addEventListener("click", () => addEventEditorCard());
+      document.getElementById("saveDateBtn").addEventListener("click", saveDateModal);
+      document.getElementById("clearDateBtn").addEventListener("click", clearDateModal);
+      document.getElementById("closeDateBtn").addEventListener("click", closeDateModal);
+
+      els.editType.addEventListener("change", () => {
+        els.manualDayWrap.hidden = els.editType.value !== "manual";
+      });
+
+      els.dateModal.addEventListener("click", event => {
+        if (event.target === els.dateModal) closeDateModal();
+      });
+
+      els.sectionsModal.addEventListener("click", event => {
+        if (event.target === els.sectionsModal) closeSectionsModal();
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          closeDateModal();
+          closeSectionsModal();
+        }
+      });
+    }
+
+    function render() {
+      syncInputs();
+
+      const [year, month] = state.currentMonth.split("-").map(Number);
+      const firstDay = new Date(year, month - 1, 1);
+      const lastDay = new Date(year, month, 0);
+
+      els.calendarTitle.textContent = firstDay.toLocaleString("en-US", {
+        month: "long",
+        year: "numeric"
+      });
+
+      if (state.viewMode === "calendar") {
+        els.calendarView.hidden = false;
+        els.tableView.hidden = true;
+        renderCalendar(firstDay, lastDay);
+      } else {
+        els.calendarView.hidden = true;
+        els.tableView.hidden = false;
+        renderTracker(firstDay, lastDay);
+      }
+
+      renderStats(firstDay, lastDay);
+    }
+
+    function renderCalendar(firstDay, lastDay) {
+      els.calendarView.innerHTML = "";
+
+      ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].forEach(day => {
+        const div = document.createElement("div");
+        div.className = "weekday";
+        div.textContent = day;
+        els.calendarView.appendChild(div);
+      });
+
+      for (let i = 0; i < firstDay.getDay(); i++) {
+        const empty = document.createElement("div");
+        empty.className = "day-cell empty";
+        els.calendarView.appendChild(empty);
+      }
+
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        const date = new Date(firstDay.getFullYear(), firstDay.getMonth(), d);
+        const key = dateKey(date);
+        const data = state.dates[key] || { type: "auto", events: [], remarks: "" };
+        const cycle = getCycleDay(key);
+        const label = getCycleLabel(cycle);
+
+        const cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "day-cell";
+        cell.addEventListener("click", () => openDateModal(key));
+
+        const visibleEvents = data.events.slice(0, 7).map(event => `
+          <div class="event ${event.category}">
+            ${event.subject ? `<small>${escapeHtml(event.subject)}</small>` : ""}
+            <strong>${escapeHtml(event.title || "Untitled Event")}</strong>
+            ${event.details ? `<div>${escapeHtml(event.details)}</div>` : ""}
+          </div>
+        `).join("");
+
+        const more = data.events.length > 7 ? `<div class="event">+${data.events.length - 7} more event(s)</div>` : "";
+
+        cell.innerHTML = `
+          <div class="date-line">
+            <span class="date-number">${d}</span>
+            ${label ? `<span class="cycle-badge ${badgeClass(data.type, cycle)}">${label}</span>` : ""}
+          </div>
+          <div class="event-list">${visibleEvents}${more}</div>
+          ${data.remarks ? `<div class="remarks">${escapeHtml(data.remarks)}</div>` : ""}
+        `;
+
+        els.calendarView.appendChild(cell);
+      }
+    }
+
+    function renderTracker(firstDay, lastDay) {
+      els.trackerHead.innerHTML = `
+        <tr>
+          <th>Date</th>
+          <th>Cycle</th>
+          ${state.sections.map(section => `
+            <th class="section-th">
+              <input class="section-name-input" value="${escapeHtml(section.name)}" data-section-id="${section.id}" aria-label="Section name">
+            </th>
+          `).join("")}
+          <th>Remarks</th>
+        </tr>
+      `;
+
+      els.trackerHead.querySelectorAll(".section-name-input").forEach(input => {
+        input.addEventListener("change", () => {
+          const section = state.sections.find(s => s.id === input.dataset.sectionId);
+          if (section) {
+            section.name = input.value.trim() || "Untitled";
+            saveLocalState();
+            render();
+            showToast("Section name updated.");
+          }
+        });
+      });
+
+      els.trackerBody.innerHTML = "";
+
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        const date = new Date(firstDay.getFullYear(), firstDay.getMonth(), d);
+        const key = dateKey(date);
+        const cycle = getCycleDay(key);
+        const label = getCycleLabel(cycle);
+        const data = state.dates[key] || { remarks: "" };
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+          <td><strong>${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</strong></td>
+          <td><strong>${label}</strong></td>
+          ${state.sections.map(section => renderSectionCell(key, section, cycle)).join("")}
+          <td class="editable-cell" contenteditable="true" data-date="${key}" data-kind="remarks">${escapeHtml(data.remarks || "")}</td>
+        `;
+
+        els.trackerBody.appendChild(row);
+      }
+
+      els.trackerBody.querySelectorAll(".editable-cell").forEach(cell => {
+        cell.addEventListener("blur", () => {
+          const key = cell.dataset.date;
+          const sectionId = cell.dataset.sectionId;
+          const kind = cell.dataset.kind;
+
+          if (kind === "remarks") {
+            state.dates[key] = state.dates[key] || { type: "auto", remarks: "", events: [] };
+            state.dates[key].remarks = cell.textContent.trim();
+          } else {
+            state.tracker[key] = state.tracker[key] || {};
+            state.tracker[key][sectionId] = cell.textContent.trim();
+          }
+
+          saveLocalState();
+          renderStatsForCurrentMonthOnly();
+          showToast("Saved.");
+        });
+      });
+    }
+
+    function renderSectionCell(key, section, cycle) {
+      const cycleNum = Number(cycle);
+      const meets = Number.isInteger(cycleNum) && section.meetingDays.includes(cycleNum);
+
+      if (!meets) return `<td class="no-meeting">—</td>`;
+
+      const value = state.tracker[key]?.[section.id] || "";
+      return `<td class="editable-cell meeting-cell" contenteditable="true" data-date="${key}" data-section-id="${section.id}">${escapeHtml(value)}</td>`;
+    }
+
+    function renderStats(firstDay, lastDay) {
+      els.statsPanel.innerHTML = "";
+
+      state.sections.forEach(section => {
+        let meetings = 0;
+        let filled = 0;
+        let lost = 0;
+
+        for (let d = 1; d <= lastDay.getDate(); d++) {
+          const date = new Date(firstDay.getFullYear(), firstDay.getMonth(), d);
+          const key = dateKey(date);
+          const cycle = Number(getCycleDay(key));
+
+          if (Number.isInteger(cycle) && section.meetingDays.includes(cycle)) {
+            meetings++;
+            const value = state.tracker[key]?.[section.id] || "";
+            if (value.trim()) filled++;
+            if (/lost|suspend|no class|walang klase/i.test(value)) lost++;
+          }
+        }
+
+        const card = document.createElement("div");
+        card.className = "stat-card";
+        card.innerHTML = `
+          <strong>${escapeHtml(section.name)}</strong>
+          <div>Meetings this month: ${meetings}</div>
+          <div>Filled entries: ${filled}</div>
+          <div>Possible lost sessions: ${lost}</div>
+        `;
+
+        els.statsPanel.appendChild(card);
+      });
+    }
+
+    function renderStatsForCurrentMonthOnly() {
+      const [year, month] = state.currentMonth.split("-").map(Number);
+      renderStats(new Date(year, month - 1, 1), new Date(year, month, 0));
+    }
+
+    function openDateModal(key) {
+      const data = state.dates[key] || { type: "auto", remarks: "", events: [] };
+
+      els.editDate.value = key;
+      els.dateModalTitle.textContent = `Edit ${key}`;
+      els.editType.value = data.type || "auto";
+      els.manualDay.value = data.manualDay || "1";
+      els.manualDayWrap.hidden = els.editType.value !== "manual";
+      els.editRemarks.value = data.remarks || "";
+      els.eventsEditor.innerHTML = "";
+
+      (data.events || []).forEach(event => addEventEditorCard(event));
+
+      if (!data.events || data.events.length === 0) addEventEditorCard();
+
+      els.dateModal.classList.add("open");
+    }
+
+    function addEventEditorCard(event = {}) {
+      const id = event.id || makeId("event");
+
+      const card = document.createElement("div");
+      card.className = "event-editor-card";
+      card.dataset.eventId = id;
+
+      card.innerHTML = `
+        <div class="event-editor-grid">
+          <div>
+            <label>Category</label>
+            <select data-field="category">
+              <option value="activity">Activity</option>
+              <option value="day0">Day 0</option>
+              <option value="holiday">Holiday</option>
+              <option value="noclass">No Classes</option>
+              <option value="assessment">Assessment</option>
+              <option value="teacher">Teacher Note</option>
+              <option value="personal">Personal</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Subject / Group</label>
+            <input data-field="subject" placeholder="e.g., G11 FLIT A, Filipino" value="${escapeHtml(event.subject || "")}">
+          </div>
+
+          <div class="full">
+            <label>Event Title</label>
+            <input data-field="title" placeholder="e.g., Individual Colloquium" value="${escapeHtml(event.title || "")}">
+          </div>
+
+          <div class="full">
+            <label>Details</label>
+            <textarea data-field="details" placeholder="Additional notes">${escapeHtml(event.details || "")}</textarea>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button class="btn-danger btn-small" type="button" data-remove-event>Remove Event</button>
+        </div>
+      `;
+
+      card.querySelector('[data-field="category"]').value = event.category || "activity";
+      card.querySelector("[data-remove-event]").addEventListener("click", () => card.remove());
+      els.eventsEditor.appendChild(card);
+    }
+
+    function saveDateModal() {
+      const key = els.editDate.value;
+
+      const events = [...els.eventsEditor.querySelectorAll(".event-editor-card")].map(card => ({
+        id: card.dataset.eventId || makeId("event"),
+        category: card.querySelector('[data-field="category"]').value,
+        subject: card.querySelector('[data-field="subject"]').value.trim(),
+        title: card.querySelector('[data-field="title"]').value.trim(),
+        details: card.querySelector('[data-field="details"]').value.trim()
+      })).filter(event => event.title || event.details || event.subject);
+
+      state.dates[key] = {
+        type: els.editType.value,
+        manualDay: els.manualDay.value,
+        remarks: els.editRemarks.value.trim(),
+        events
+      };
+
+      saveLocalState();
+      closeDateModal();
+      render();
+      showToast("Date saved.");
+    }
+
+    function clearDateModal() {
+      const confirmed = confirm("Clear all data for this date?");
+      if (!confirmed) return;
+
+      delete state.dates[els.editDate.value];
+      saveLocalState();
+      closeDateModal();
+      render();
+      showToast("Date cleared.");
+    }
+
+    function closeDateModal() {
+      els.dateModal.classList.remove("open");
+    }
+
+    function openSectionsModal() {
+      els.sectionsEditor.innerHTML = "";
+      state.sections.forEach(section => addSectionEditorRow(section));
+      els.sectionsModal.classList.add("open");
+    }
+
+    function addSectionEditorRow(section = {}) {
+      const id = section.id || makeId("section");
+
+      const row = document.createElement("div");
+      row.className = "event-editor-card";
+      row.dataset.sectionId = id;
+
+      row.innerHTML = `
+        <div class="event-editor-grid">
+          <div>
+            <label>Section / Class Name</label>
+            <input data-field="name" value="${escapeHtml(section.name || "")}" placeholder="e.g., G11 FLIT A">
+          </div>
+
+          <div>
+            <label>Meeting Cycle Days</label>
+            <input data-field="meetingDays" value="${escapeHtml((section.meetingDays || []).join(", "))}" placeholder="e.g., 1, 5, 6, 7">
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button class="btn-danger btn-small" type="button" data-remove-section>Remove Section</button>
+        </div>
+      `;
+
+      row.querySelector("[data-remove-section]").addEventListener("click", () => row.remove());
+      els.sectionsEditor.appendChild(row);
+    }
+
+    function saveSections() {
+      const sections = [...els.sectionsEditor.querySelectorAll(".event-editor-card")].map(row => {
+        const name = row.querySelector('[data-field="name"]').value.trim();
+
+        const meetingDays = row.querySelector('[data-field="meetingDays"]').value
+          .split(",")
+          .map(x => Number(x.trim()))
+          .filter(x => Number.isInteger(x) && x >= 1 && x <= 7);
+
+        return {
+          id: row.dataset.sectionId || makeId("section"),
+          name: name || "Untitled",
+          meetingDays
+        };
+      });
+
+      state.sections = sections.length ? sections : structuredClone(defaultState.sections);
+      saveLocalState();
+      closeSectionsModal();
+      render();
+      showToast("Sections saved.");
+    }
+
+    function closeSectionsModal() {
+      els.sectionsModal.classList.remove("open");
+    }
+
+    function shouldSkipCycle(key, date) {
+      const data = state.dates[key];
+
+      if (state.weekends === "skip" && isWeekend(date)) return true;
+      if (!data) return false;
+
+      return ["day0", "holiday", "noclass", "activity"].includes(data.type);
+    }
+
+    function getCycleDay(targetKey) {
+      const start = parseDate(state.startDate);
+      const target = parseDate(targetKey);
+      const targetData = state.dates[targetKey];
+
+      if (targetData?.type === "manual") return Number(targetData.manualDay || state.startDay);
+      if (target < start) return "";
+
+      let cycle = Number(state.startDay);
+      let current = new Date(start);
+
+      while (current <= target) {
+        const key = dateKey(current);
+        const data = state.dates[key];
+
+        if (data?.type === "manual") cycle = Number(data.manualDay || cycle);
+
+        if (key === targetKey) {
+          if (shouldSkipCycle(key, current)) {
+            if (data?.type === "day0") return "0";
+            if (data?.type === "holiday") return "Holiday";
+            if (data?.type === "noclass") return "No Classes";
+            if (data?.type === "activity") return "Activity";
+            return "";
+          }
+
+          return String(cycle);
+        }
+
+        if (!shouldSkipCycle(key, current)) cycle = cycle === 7 ? 1 : cycle + 1;
+
+        current = addDays(current, 1);
+      }
+
+      return "";
+    }
+
+    function getCycleLabel(cycle) {
+      if (!cycle) return "";
+      if (cycle === "0") return "Day 0";
+      if (!Number.isNaN(Number(cycle))) return `Day ${cycle}`;
+      return cycle;
+    }
+
+    function badgeClass(type, cycle) {
+      if (type === "day0" || cycle === "0") return "badge-day0";
+      if (type === "holiday" || cycle === "Holiday") return "badge-holiday";
+      if (type === "noclass" || cycle === "No Classes") return "badge-noclass";
+      if (type === "activity" || cycle === "Activity") return "badge-activity";
+      return "";
+    }
+
+    function changeMonth(offset) {
+      const [year, month] = state.currentMonth.split("-").map(Number);
+      const next = new Date(year, month - 1 + offset, 1);
+
+      state.currentMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
+      saveLocalState();
+      render();
+    }
+
+    function exportJSON() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = `xavier-g11-flit-calendar-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+
+      URL.revokeObjectURL(url);
+      showToast("Exported JSON.");
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = e => {
+        try {
+          state = normalizeState(JSON.parse(e.target.result));
+          saveLocalState();
+          render();
+          showToast("Imported JSON.");
+        } catch {
+          alert("Invalid JSON file.");
+        }
+      };
+
+      reader.readAsText(file);
+      event.target.value = "";
+    }
+
+    function resetApp() {
+      const confirmed = confirm("Reset calendar data? This may also update cloud data if Firebase sync is active.");
+      if (!confirmed) return;
+
+      state = structuredClone(defaultState);
+      saveLocalState();
+      render();
+      showToast("Reset complete.");
+    }
+
+    function dateKey(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+
+    function parseDate(key) {
+      const [y, m, d] = key.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    function addDays(date, days) {
+      const next = new Date(date);
+      next.setDate(next.getDate() + days);
+      return next;
+    }
+
+    function isWeekend(date) {
+      return date.getDay() === 0 || date.getDay() === 6;
+    }
+
+    function makeId(prefix) {
+      return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+
+      setTimeout(() => {
+        els.toast.classList.remove("show");
+      }, 2200);
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+</html>
